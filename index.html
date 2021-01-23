@@ -1,0 +1,103 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.bundle.min.js"></script>
+<script src="Logic.js"></script>
+<canvas id="myChart" width="1100" height="600"></canvas>
+<canvas id="fitnesschart" width="1000" height="300"></canvas>
+<script>
+
+var ctx = document.getElementById("myChart").getContext("2d");
+var ctx2 = document.getElementById("fitnesschart").getContext("2d");
+
+var chart = new Chart(ctx, {
+	type: 'line',
+	options: {
+		legend:{
+			display: false
+		},
+		responsive: false,
+		animation: {
+			duration: 0
+		},
+		scales: {
+            yAxes: [{
+                ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 160
+                }
+            }]
+        }
+	}
+})
+
+var fitnesschart = new Chart(ctx2, {
+	type: 'line',
+	data: {
+		labels: [],
+		datasets: [
+			{
+				data: []
+			}
+		]
+	},
+	options: {
+		legend:{
+			display: false
+		},
+		responsive: false,
+		animation: {
+			duration: 0
+		},
+		scales: {
+            yAxes: [{
+                ticks: {
+                }
+            }]
+        }
+	}
+})
+
+
+var best = {points: [], fitness: Infinity}
+var population = Generation.createRandom()
+//var fitnesses = []
+
+const nextGen = ()=>{
+	population = population.newGeneration()
+	population.orderByFitness()
+	//fitnesses.push(population.meanFitness)
+	best = {
+		points: []
+	}
+	population.members.map(m=>{
+		m.points.map((p, index)=>best.points[index] ? best.points[index] += p : best.points[index] = p)
+	})
+	best.points = best.points.map(p=>p/population.members.length)
+	
+	//if (true || population.members[0].fitness < best.fitness) best = population.members[0]
+	updateChart()
+	
+}
+
+var i = 0
+
+const updateChart = ()=>{
+	let limit = 3
+	chart.data = {
+		labels: Array.from({length: NODES}, (v,k)=>k*2),
+		datasets: population.members.slice(0,limit).concat([best]).map((member, index)=>{
+			return {
+				data: member.points,
+				fill: false,
+				borderColor: (index == limit) ? 'green' : 'rgba(0,0,0,0.1)'
+			}
+		})
+	}
+	fitnesschart.data.labels.push(i++)
+	fitnesschart.data.datasets[0].data.push(population.meanFitness)
+	chart.update()
+	fitnesschart.update()
+}
+
+window.setInterval(nextGen, 10)
+
+updateChart()
+</script>
